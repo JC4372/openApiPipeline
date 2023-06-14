@@ -1,0 +1,54 @@
+services:
+  mongodb:
+    image: mongo:6.0.6
+    container_name: openapi-mongoDB
+    networks:
+      default:
+        ipv4_address: 192.168.100.27
+    ports: 
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: mongo123*
+    volumes:
+      - mongo_data:/data/db
+    restart: unless-stopped
+    
+  jenkins:
+    container_name: openapi-jenkins
+    build:
+      context: .
+      dockerfile: ./containers/dockerfiles/jenkins/Dockerfile
+    ports:
+      - "8080:8080"
+    networks:
+      default:
+        ipv4_address: 192.168.100.80
+    volumes:
+      - jenkins_data:/var/jenkins_home
+    
+  sonarqube:
+    container_name: openapi-sonarqube
+    image: sonarqube:9.9.1-community
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+    networks:
+      default:
+        ipv4_address: 192.168.100.90
+
+volumes:
+  jenkins_data:
+    external: true
+  sonarqube_data:
+    external: true
+  mongo_data:
+    external: true
+
+networks:
+  default:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.100.0/24

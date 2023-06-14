@@ -1,0 +1,3 @@
+docker volume create jenkins_data
+docker volume create sonarqube_data
+docker volume create mongo_data

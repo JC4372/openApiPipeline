@@ -1,0 +1,317 @@
+
+docker build -t mongo_db .
+
+ docker-compose build --no-cache
+    
+    find . -name "*.json" -exec bash -c ";
+    
+
+bash -c "for filename in ./*.json; do
+     mongoimport --host localhost --port 27017 --authenticationDatabase admin --username root --password mongo123*  \
+        --db openAPITestDB --collection \$(basename \$filename .json) --file \$filename --jsonArray
+done"
+
+
+bash -c "for filename in ./*.json; do
+     echo \$(basename \$filename .json)
+done"
+
+
+    find . -name "*.json" -exec echo $(basename {} .json) \;
+
+for filename in ./*.json; do
+    name=$(basename $filename .json)
+     echo $name
+done
+
+
+
+
+iputils-ping
+
+
+
+
+
+sonar-scanner \
+  -Dsonar.projectKey=OpenAPI \
+  -Dsonar.sources=. \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=sqp_88dc27aaa15091b17efe3941fbd2cbe76f300036
+
+
+
+
+Docker Commons
+Apache HttpComponents Client 5.x API
+Docker API
+Docker	
+Docker Pipeline	
+Loading plugin extensions
+
+
+
+NodeJS
+HTML Publisher
+
+
+
+pipeline {
+    agent any
+
+   environment {
+     def scanner = tool "sonarQubeScanner";
+     SONAR_CRED = credentials('sonarqube-login')
+   }
+   
+    stages {
+        
+        stage('Clone repository') {
+            steps {
+                git 'https://github.com/JC4372/openAPITest.git'
+            }
+        }
+        stage('Sonarqube Analysis') {
+            steps {
+                withSonarQubeEnv("sonarQubeServer") {
+                    sh('${scanner}/bin/sonar-scanner \
+                              -Dsonar.projectKey=OpenAPI \
+                              -Dsonar.login=$SONAR_CRED_USR \
+                              -Dsonar.password=$SONAR_CRED_PSW \
+                              -Dsonar.sources=./')
+                }
+            }
+        }
+        
+        stage('Seed Database') {
+            steps {
+                
+                withCredentials([string(credentialsId: 'MONGO_CONNECTION_STRING', variable: 'MONGO_CONNECTION_STRING')]) {
+                    dir('data_test') {
+                        sh "chmod +x ./seed-db.sh"
+                        sh "./seed-db.sh"
+                    } 
+                }
+            }
+        }
+        
+        stage('Install python dependencies') {
+            steps {
+                 sh '''
+                  # Crear el entorno virtual
+                  python3 -m venv myenv
+        
+                  # Activar el entorno virtual
+                  . myenv/bin/activate
+                  
+                  # Instalar dependencias
+                  pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Run Test') {
+            steps {
+                withCredentials([string(credentialsId: 'MONGO_CONNECTION_STRING', variable: 'MONGO_CONNECTION_STRING')]) {
+                    script {
+                        catchError (buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                             sh '''
+                                chmod +x ./autotest.sh
+                                . myenv/bin/activate
+                                ./autotest.sh
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Report') {
+            steps {
+                publishHTML(target: [
+                    allowMissing: false,
+                    alwaysLinkToLastBuild: false,
+                    keepAll: false,
+                    reportDir: '../reports',
+                    reportFiles: 'report.html',
+                    reportName: 'API Test Report'
+                ])
+            }
+        }
+    }
+}
+
+
+pipeline {
+    agent any
+
+   environment {
+     def scanner = tool "sonarQubeScanner";
+   }
+   
+    stages {
+        
+        stage('Clone repository') {
+            steps {
+                git 'https://github.com/JC4372/openAPITest.git'
+            }
+        }
+        // stage('Sonarqube Analysis') {
+        //     steps {
+        //         withSonarQubeEnv("sonarQubeServer") {
+        //             sh "ls"
+        //             sh "${scanner}/bin/sonar-scanner \
+        //               -Dsonar.projectKey=OpenAPI \
+        //               -Dsonar.login=admin \
+        //               -Dsonar.password=admin123 \
+        //               -Dsonar.sources=./ \
+        //               -Dsonar.host.url=http://sonarqube:9000 \
+        //               -Dsonar.token=sqp_088840414ea067c3a8b383c4e1833e7fa41b445b"
+        //         }
+        //     }
+        // }
+        
+        // stage('Seed Database') {
+        //     steps {
+        //         dir('data_test') {
+        //             sh "/scripts/seed-db.sh"
+        //         } 
+        //     }
+        // }
+        
+        // stage('Install python dependencies') {
+        //     steps {
+        //          sh '''
+        //           # Crear el entorno virtual
+        //           python3 -m venv myenv
+        
+        //           # Activar el entorno virtual
+        //           . myenv/bin/activate
+                  
+        //           # Instalar dependencias
+        //           pip install -r requirements.txt
+        //         '''
+        //     }
+        // }
+        
+        // stage('Run Test') {
+        //     steps {
+        //         script {
+        //             catchError (buildResult: 'FAILURE', stageResult: 'FAILURE') {
+        //                  sh '''
+        //                     chmod +x ./autotest.sh
+        //                     . myenv/bin/activate
+        //                     ./autotest.sh
+        //                 '''
+        //             }
+        //         }
+        //     }
+        // }
+        
+        // stage('Report') {
+        //     steps {
+        //         publishHTML(target: [
+        //             allowMissing: false,
+        //             alwaysLinkToLastBuild: false,
+        //             keepAll: false,
+        //             reportDir: '../reports',
+        //             reportFiles: 'report.html',
+        //             reportName: 'API Test Report'
+        //         ])
+        //     }
+        // }
+    }
+}
+
+
+
+
+
+pipeline {
+    agent any
+
+   environment {
+     def scanner = tool "sonarQubeScanner";
+   }
+   
+    stages {
+        
+        stage('Clone repository') {
+            steps {
+                git 'https://github.com/JC4372/openAPITest.git'
+            }
+        }
+        // stage('Sonarqube Analysis') {
+        //     steps {
+        //         withSonarQubeEnv("sonarQubeServer") {
+        //           sh "${scanner}/bin/sonar-scanner \
+        //               -Dsonar.projectKey=OpenAPI \
+        //               -Dsonar.login=admin \
+        //               -Dsonar.password=admin123 \
+        //               -Dsonar.sources=./ \
+        //               -Dsonar.host.url=http://sonarqube:9000"
+        //         }
+        //     }
+        // }
+        
+        // stage('CONNCT STR') {
+        //     steps {
+        //         withCredentials([string(credentialsId: 'MONGO_CONNECTION_STRING', variable: 'MONGO_CONNECTION_STRING')]) {
+        //           sh "python3 -c \"import os; print(list(os.getenv('MONGO_CONNECTION_STRING')))\" "
+        //         }
+        //     }
+        // }
+        
+        // stage('Seed Database') {
+        //     steps {
+        //         dir('data_test') {
+        //             sh "/scripts/seed-db.sh"
+        //         } 
+        //     }
+        // }
+        
+        stage('Install python dependencies') {
+            steps {
+                 sh '''
+                  # Crear el entorno virtual
+                  python3 -m venv myenv
+        
+                  # Activar el entorno virtual
+                  . myenv/bin/activate
+                  
+                  # Instalar dependencias
+                  pip install -r requirements.txt
+                '''
+            }
+        }
+        
+        stage('Run Test') {
+            steps {
+                withCredentials([string(credentialsId: 'MONGO_CONNECTION_STRING', variable: 'MONGO_CONNECTION_STRING')]) {
+                    script {
+                        catchError (buildResult: 'FAILURE', stageResult: 'FAILURE') {
+                             sh '''
+                                chmod +x ./autotest.sh
+                                . myenv/bin/activate
+                                ./autotest.sh
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
+        // stage('Report') {
+        //     steps {
+        //         publishHTML(target: [
+        //             allowMissing: false,
+        //             alwaysLinkToLastBuild: false,
+        //             keepAll: false,
+        //             reportDir: '../reports',
+        //             reportFiles: 'report.html',
+        //             reportName: 'API Test Report'
+        //         ])
+        //     }
+        // }
+    }
+}
